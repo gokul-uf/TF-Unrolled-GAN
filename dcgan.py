@@ -14,10 +14,10 @@ class DCGAN(object):
     def __init__(self):
         # self.image_size = 64
         self.image_size = 32
-        self.noise_size = 100
+        self.noise_size = 256
         self.lrelu_alpha = 0.2
         self.num_channels = 3
-        self.lr = 0.0002
+        self.lr = 1e-3
         self.beta_1 = 0.5
 
     def _create_placeholders(self):
