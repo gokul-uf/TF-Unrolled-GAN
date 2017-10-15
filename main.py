@@ -8,7 +8,7 @@ import numpy as np
 import os
 import tensorflow as tf
 
-from model import DCGAN
+from model import Unrolled_GAN
 from data_utils import Processor
 
 flags = tf.app.flags
@@ -25,6 +25,7 @@ flags.DEFINE_integer("eval_images", 100,
                      "Images to generate at eval, must be a perfect square")
 flags.DEFINE_integer("num_steps", 1000, "Number of batchs to train on")
 flags.DEFINE_integer("batch_size", 100, "Batch size")
+flags.DEFINE_integer("unroll_steps", 3, "Number of steps to unroll")
 
 
 def maybe_create_output_dir():
@@ -57,7 +58,7 @@ if __name__ == "__main__":
 
     tf.logging.info("Starting training for %d steps", FLAGS.num_steps)
     tf.logging.info("Passed flags: %s", FLAGS.__flags)
-    dcgan = DCGAN()
+    unrolled_gan = Unrolled_GAN(FLAGS.unroll_steps)
     processor = Processor(data_dir=FLAGS.data_dir, batch_size=FLAGS.batch_size)
     data_yielder = processor.get_batch()
     saver = tf.train.Saver(max_to_keep=None)
@@ -70,32 +71,34 @@ if __name__ == "__main__":
             train_batch = data_yielder.next()
 
             # len(...) because we can get smaller batches at file edges
-            noise = np.random.randn(len(train_batch), dcgan.noise_size)
+            noise = np.random.randn(len(train_batch), unrolled_gan.noise_size)
 
             fetches = [
-                dcgan.d_train, dcgan.g_train, dcgan.d_loss, dcgan.g_loss,
-                dcgan.summary_op
+                unrolled_gan.d_train, unrolled_gan.g_train,
+                unrolled_gan.d_loss, unrolled_gan.unrolled_loss,
+                unrolled_gan.summary_op
             ]
             feed_dict = {
-                dcgan.input_images: train_batch,
-                dcgan.input_noise: noise
+                unrolled_gan.input_images: train_batch,
+                unrolled_gan.input_noise: noise
             }
-            _, _, d_loss, g_loss, summary = sess.run(
+            _, _, d_loss, unrolled_loss, summary = sess.run(
                 fetches, feed_dict=feed_dict)
 
-            tf.logging.log_every_n(tf.logging.INFO,
-                                   "Step {}, G Loss: {}, D Loss: {}".format(
-                                       i, g_loss, d_loss), FLAGS.eval_every)
+            tf.logging.log_every_n(
+                tf.logging.INFO,
+                "Step {}, D Loss: {}, Unrolled Loss: {}".format(
+                    i, d_loss, unrolled_loss), FLAGS.eval_every)
 
             if i % FLAGS.eval_every == 0:
                 # Let's generate some images!
                 tf.logging.info("Running evaluation")
                 feed_dict = {
-                    dcgan.input_noise:
-                    np.random.randn(FLAGS.eval_images, dcgan.noise_size)
+                    unrolled_gan.input_noise:
+                    np.random.randn(FLAGS.eval_images, unrolled_gan.noise_size)
                 }
                 gen_output = sess.run(
-                    dcgan.generator_output, feed_dict=feed_dict)
+                    unrolled_gan.generator_output, feed_dict=feed_dict)
                 gen_output = (gen_output * 127) + 127.0
                 gen_output = gen_output.astype(np.uint8)
                 create_collage(gen_output, i)
