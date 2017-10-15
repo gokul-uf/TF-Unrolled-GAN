@@ -1,6 +1,7 @@
 from __future__ import absolute_import
-from __future__ import print_function
 from __future__ import division
+from __future__ import print_function
+
 
 import tensorflow as tf
 
@@ -139,35 +140,3 @@ class DCGAN(object):
                 inputs=reshaped_bnorm_2, units=1, name="fc_1")
             fc_1 = tf.sigmoid(logits)
             return fc_1, logits
-
-    def _compute_loss(self):
-        self.d_loss_real = tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=self.real_logits, labels=tf.ones_like(self.real_logits))
-        self.d_loss_real = tf.reduce_mean(self.d_loss_real)
-
-        self.d_loss_fake = tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=self.fake_logits, labels=tf.zeros_like(self.fake_logits))
-        self.d_loss_fake = tf.reduce_mean(self.d_loss_fake)
-
-        self.d_loss = self.d_loss_real + self.d_loss_fake
-        self.g_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=self.fake_logits, labels=tf.ones_like(self.fake_logits))
-        self.g_loss = tf.reduce_mean(self.g_loss)
-
-        tf.summary.scalar("disc_loss_real", self.d_loss_real)
-        tf.summary.scalar("disc_loss_fake", self.d_loss_fake)
-        tf.summary.scalar("disc_loss", self.d_loss)
-        tf.summary.scalar("gen_loss", self.g_loss)
-
-        d_opt = tf.train.AdamOptimizer(
-            learning_rate=self.lr, beta1=self.beta_1)
-        g_opt = tf.train.AdamOptimizer(
-            learning_rate=self.lr, beta1=self.beta_1)
-
-        d_vars = tf.get_collection(
-            tf.GraphKeys.GLOBAL_VARIABLES, scope="discriminator")
-        g_vars = tf.get_collection(
-            tf.GraphKeys.GLOBAL_VARIABLES, scope="generator")
-
-        self.d_train = d_opt.minimize(self.d_loss, var_list=d_vars)
-        self.g_train = g_opt.minimize(self.g_loss, var_list=g_vars)
