@@ -10,9 +10,9 @@ Adam = tf.contrib.keras.optimizers.Adam
 _graph_replace = tf.contrib.graph_editor.graph_replace
 
 
-class unrolled_gan(DCGAN):
+class Unrolled_GAN(DCGAN):
     def __init__(self, unroll_steps):
-        super(unrolled_gan, self).__init__()
+        super(Unrolled_GAN, self).__init__()
         self.unroll_steps = unroll_steps
         self._create_placeholders()
         self.generator_output = self._create_generator()
@@ -68,7 +68,7 @@ class unrolled_gan(DCGAN):
         # We use the same hparams as DCGAN coz it's stable
         d_opt = Adam(lr=self.lr, beta_1=self.beta_1)
         updates = d_opt.get_updates(d_vars, [], self.d_loss)
-        self.d_train_op = tf.group(*updates, name="d_train_op")
+        self.d_train = tf.group(*updates, name="d_train_op")
 
         if self.unroll_steps > 0:
             update_dict = self.extract_update_dict(updates)
