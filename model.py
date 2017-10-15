@@ -14,6 +14,8 @@ class Unrolled_GAN(DCGAN):
     def __init__(self, unroll_steps):
         super(Unrolled_GAN, self).__init__()
         self.unroll_steps = unroll_steps
+        self.disc_lr = 1e-4
+        self.gen_lr = 1e-3
         self._create_placeholders()
         self.generator_output = self._create_generator()
         self.real_predictions, self.real_logits = self._create_discriminator(
@@ -66,7 +68,7 @@ class Unrolled_GAN(DCGAN):
             tf.GraphKeys.GLOBAL_VARIABLES, scope="discriminator")
 
         # We use the same hparams as DCGAN coz it's stable
-        d_opt = Adam(lr=self.lr, beta_1=self.beta_1)
+        d_opt = Adam(lr=self.disc_lr, beta_1=self.beta_1)
         updates = d_opt.get_updates(d_vars, [], self.d_loss)
         self.d_train = tf.group(*updates, name="d_train_op")
 
@@ -82,7 +84,7 @@ class Unrolled_GAN(DCGAN):
             self.unrolled_loss = self.d_loss
 
         g_opt = tf.train.AdamOptimizer(
-            learning_rate=self.lr, beta1=self.beta_1)
+            learning_rate=self.gen_lr, beta1=self.beta_1)
         self.g_train = g_opt.minimize(-self.unrolled_loss, var_list=g_vars)
 
         # self.d_train = d_opt.minimize(self.d_loss, var_list=d_vars)
